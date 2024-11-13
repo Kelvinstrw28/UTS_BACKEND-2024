@@ -8,123 +8,134 @@ use Illuminate\Support\Facades\Validator;
 
 class NewsController extends Controller
 {
-    // Method index
     public function index()
     {
-        // Retrieve all news data
         $news = News::all();
-
-        // Check if the data is empty
-        if ($news->isEmpty()) {
-            return response()->json(['message' => 'Data tidak ditemukan'], 404);
-        }
-
-        // Response if data is found
-        $response = [
-            'data' => $news,
-            'message' => 'Berhasil menampilkan semua data berita'
-        ];
-
-        return response()->json($response, 200);
+        return response()->json([
+            'success' => true,
+            'data' => $news
+        ], 200);
     }
 
-    // Method to add new data
     public function store(Request $request)
     {
-        // Validate input
         $validator = Validator::make($request->all(), [
-            'title' => 'required|string',
-            'author' => 'required|string',
+            'title' => 'required|string|max:255', 
+            'author' => 'required|string|max:100', 
+            'description' => 'required|string', 
+            'content' => 'required', 
+            'url' => 'required|url', 
+            'url_image' => 'nullable|url', 
+            'published_at' => 'nullable|date', 
+            'category' => 'required|string' 
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors() 
+            ], 400);
+        }
+
+        $news = News::create($request->all());
+        return response()->json([
+            'success' => true,
+            'data' => $news
+        ], 201);
+    }
+
+    public function show($id)
+    {
+        $news = News::find($id);
+        if (!$news) {
+            return response()->json([
+                'success' => false,
+                'message' => 'News not found'
+            ], 404);
+        }
+        return response()->json([
+            'success' => true,
+            'data' => $news
+        ], 200);
+    }
+    public function update(Request $request, $id)
+    {
+        $news = News::find($id);
+        if (!$news) {
+            return response()->json([
+                'success' => false,
+                'message' => 'News not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'required|string|max:255',
+            'author' => 'required|string|max:100',
             'description' => 'required|string',
-            'content' => 'required|string',
-            'url' => 'required|url|unique:news',
-            'url_image' => 'required|url',
-            'published_at' => 'required|date',
+            'content' => 'required',
+            'url' => 'required|url',
+            'url_image' => 'nullable|url',
+            'published_at' => 'nullable|date',
             'category' => 'required|string'
         ]);
 
-        // Check if validation has errors
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'Data tidak lengkap atau tidak valid',
+                'success' => false,
                 'errors' => $validator->errors()
             ], 400);
         }
 
-        // Create news data
-        $news = News::create($request->all());
+        $news->update($request->all());
 
-        $response = [
-            'message' => 'Berhasil menambahkan berita',
+        return response()->json([
+            'success' => true,
             'data' => $news
-        ];
-
-        return response()->json($response, 201);
+        ], 200);
     }
 
-    // Method to update data
-    public function update(Request $request, $id)
-    {
-        // Find news by ID
-        $news = News::find($id);
-
-        // If news is not found, return 404 response
-        if (!$news) {
-            return response()->json(['message' => 'Berita tidak ditemukan'], 404);
-        }
-
-        // Validate input
-        $validator = Validator::make($request->all(), [
-            'title' => 'sometimes|required|string',
-            'author' => 'sometimes|required|string',
-            'description' => 'sometimes|required|string',
-            'content' => 'sometimes|required|string',
-            'url' => 'sometimes|required|url|unique:news,url,' . $id,
-            'url_image' => 'sometimes|required|url',
-            'published_at' => 'sometimes|required|date',
-            'category' => 'sometimes|required|string'
-        ]);
-
-        // Check if validation has errors
-        if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Data tidak lengkap atau tidak valid',
-                'errors' => $validator->errors()
-            ], 400);
-        }
-
-        // Update news data
-        $news->update($request->only([
-            'title', 'author', 'description', 'content', 'url', 'url_image', 'published_at', 'category'
-        ]));
-
-        $response = [
-            'message' => 'Berhasil memperbarui berita',
-            'data' => $news
-        ];
-
-        return response()->json($response, 200);
-    }
-
-    // Method to delete data
     public function destroy($id)
     {
-        // Find news by ID
         $news = News::find($id);
 
-        // If news is not found, return 404 response
         if (!$news) {
-            return response()->json(['message' => 'Berita tidak ditemukan'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'News not found'
+            ], 404);
         }
 
-        // Delete news data
         $news->delete();
 
-        $response = [
-            'message' => 'Berhasil menghapus berita',
-            'data' => $news
-        ];
+        return response()->json([
+            'success' => true,
+            'message' => 'News deleted successfully'
+        ], 200);
+    }
+    
+    
+    public function search($title)
+    {
 
-        return response()->json($response, 200);
+        $news = News::where('title', 'LIKE', "%{$title}%")->get();
+
+  
+        return response()->json([
+            'success' => true,
+            'data' => $news
+        ], 200);
+    }
+
+    
+    public function getByCategory($category)
+    {
+        
+        $news = News::where('category', $category)->get();
+
+        
+        return response()->json([
+            'success' => true,
+            'data' => $news
+        ], 200);
     }
 }

@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    // Fungsi untuk registrasi pengguna baru
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -35,7 +34,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-    // Fungsi untuk login pengguna
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -49,7 +47,7 @@ class AuthController extends Controller
 
         if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
             $user = Auth::user();
-            $token = $user->createToken('YourAppName')->plainTextToken; // pastikan menggunakan Passport atau Sanctum untuk token
+            $token = $user->createToken('YourAppName')->plainTextToken;
 
             return response()->json([
                 'message' => 'Login successful!',
@@ -63,7 +61,6 @@ class AuthController extends Controller
         }
     }
 
-    // Fungsi untuk logout pengguna
     public function logout(Request $request)
     {
         Auth::logout();
